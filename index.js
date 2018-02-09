@@ -27,4 +27,7 @@ io.on('connection', function(socket){
   socket.on('chat message', function(turn){
     io.emit('chat message', turn);
   });
+  socket.on('turn', function(t){
+    io.emit('turn', t);
+  });
 });

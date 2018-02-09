@@ -10,6 +10,7 @@
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
         
+        var socket = io.connect();
         var canvas;
         var canvasContext
         var mousePosY;
@@ -29,6 +30,20 @@
         
         console.log(circle);
         
+        socket.on("chat message", function(turn)
+		{
+            if(turn % 2 == 0){
+                fillCircle(circle[turn].x, circle[turn].y, 'white');
+            }else{
+                fillCircle(circle[turn].x, circle[turn].y, 'black');
+            }
+		})
+        
+        socket.on("turn", function(t)
+		{
+            turn = t;
+		})
+        
         function calculateMousePos(evt) {
             var rect = canvas.getBoundingClientRect();
             var root = document.documentElement;
@@ -38,16 +53,20 @@
         }
         
         function handleMouseClick(evt) {
-            turn++;
-            if(mousePosY + mousePosX > -1){
-                circle[mousePosY + mousePosX].z = 1;
+            var t = turn++;
+            var mousePos = mousePosY + mousePosX;
+            if(mousePos > -1){
+                circle[mousePos].z = 1;
             }
-            console.log(mousePosY + mousePosX)
-            if(turn % 2 == 0){
-                fillCircle(circle[mousePosY + mousePosX].x, circle[mousePosY + mousePosX].y, 'white')
-            }else{
-                fillCircle(circle[mousePosY + mousePosX].x, circle[mousePosY + mousePosX].y, 'black')
-            }
+            console.log(mousePos);
+            //if(turn % 2 == 0){
+            socket.emit("chat message", mousePos);
+            socket.emit("turn", t);
+                //fillCircle(circle[mousePos].x, circle[mousePos].y, 'white');
+            //}else{
+                //socket.emit("chat message", mousePos);
+                //fillCircle(circle[mousePos].x, circle[mousePos].y, 'black');
+            //}
         }
         
         window.onload = function() {
@@ -106,19 +125,6 @@
             canvasContext.arc(leftX, topY, 20, 0, 2*Math.PI);
             canvasContext.fill();
         }
-        
-        
-        $(function () {
-            var socket = io();
-            $('#myCanvas').onclick(function(){
-                socket.emit('chat message', turn);
-                //turn.val('');
-                return false;
-            });
-            socket.on('chat message', function(turn){
-                $('#messages').append($('<li>').text(turn));
-            });
-        });
     </script>
 </body>
 </html>
