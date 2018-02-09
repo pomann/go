@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Game</title>
+</head>
+<body>
+    <canvas id="myCanvas" width="560" height="560"></canvas>
+    <ul id='messages'></ul>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        
+        var canvas;
+        var canvasContext
+        var mousePosY;
+        var mousePosX;
+        var turn = 0;
+        var circle = [];
+        
+        for(i = 40; i < 560; i = i + 40){
+            for(i2 = 40; i2 < 560; i2 = i2 + 40){
+                circle.push({
+                x: i2,
+                y: i,
+                z: 0
+                });
+            }
+        }
+        
+        console.log(circle);
+        
+        function calculateMousePos(evt) {
+            var rect = canvas.getBoundingClientRect();
+            var root = document.documentElement;
+            var mouseX = evt.clientX - rect.left - root.scrollLeft;
+            var mouseY = evt.clientY - rect.top - root.scrollTop;
+            return {x:mouseX,y:mouseY}
+        }
+        
+        function handleMouseClick(evt) {
+            turn++;
+            if(mousePosY + mousePosX > -1){
+                circle[mousePosY + mousePosX].z = 1;
+            }
+            console.log(mousePosY + mousePosX)
+            if(turn % 2 == 0){
+                fillCircle(circle[mousePosY + mousePosX].x, circle[mousePosY + mousePosX].y, 'white')
+            }else{
+                fillCircle(circle[mousePosY + mousePosX].x, circle[mousePosY + mousePosX].y, 'black')
+            }
+        }
+        
+        window.onload = function() {
+            canvas = document.getElementById('myCanvas');
+            canvasContext = canvas.getContext('2d');
+            var framesPerSecond = 1;
+            draw();
+            
+            canvas.addEventListener("mousemove", function(evt) {
+                var mousePos = calculateMousePos(evt);
+                mousePosY = mousePos.y;
+                mousePosX = mousePos.x;
+                mousePosY = (Math.floor((mousePosY - 20)/40))*13;
+                mousePosX = (Math.floor((mousePosX - 20)/40));
+                console.log(mousePosX+mousePosY);
+            })
+            
+            canvas.addEventListener("mousedown", handleMouseClick);
+        }
+        
+        function draw() {
+            colorRect(0,0,canvas.width,canvas.height,'#FFB333');
+            
+            for(i = 40; i < 520; i = i + 40){
+                for(i2 = 40; i2 < 520; i2 = i2 + 40){
+                    outlineRect(i,i2,40,40,'white');
+                }
+            }
+            
+            for(i = 0; i < 169; i++){
+                outlineCircle(circle[i].x, circle[i].y, 'white')
+            }
+        }
+        
+        function colorRect(leftX, topY, width, height, drawColor) {
+            canvasContext.fillStyle = drawColor;
+            canvasContext.fillRect(leftX,topY,width,height);
+        }
+        
+        function outlineRect(leftX, topY, width, height, drawColor) {
+            canvasContext.strokeStyle = drawColor;
+            canvasContext.rect(leftX, topY, width, height);
+            canvasContext.stroke();
+        }
+                
+        function outlineCircle(leftX, topY, drawColor) {
+            canvasContext.beginPath();
+            canvasContext.strokeStyle = drawColor;
+            canvasContext.arc(leftX, topY, 20, 0, 2*Math.PI);
+            canvasContext.stroke();
+        }
+        
+        function fillCircle(leftX, topY, drawColor) {
+            canvasContext.beginPath();
+            canvasContext.fillStyle = drawColor;
+            canvasContext.arc(leftX, topY, 20, 0, 2*Math.PI);
+            canvasContext.fill();
+        }
+        
+        
+        $(function () {
+            var socket = io();
+            $('#myCanvas').onclick(function(){
+                socket.emit('chat message', turn);
+                //turn.val('');
+                return false;
+            });
+            socket.on('chat message', function(turn){
+                $('#messages').append($('<li>').text(turn));
+            });
+        });
+    </script>
+</body>
+</html>
